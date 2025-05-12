@@ -1,23 +1,27 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'rohit@1122',
-    database: 'review_system'
+const db = mysql.createConnection(process.env.DATABASE_URL);
+
+db.connect((err) => {
+    if (err) {
+        console.error("❌ Failed to connect to DB:", err.message);
+        process.exit(1);
+    }
+    console.log("✅ Connected to MySQL database.");
 });
 
 // Get all reviews
 app.get('/reviews', (req, res) => {
     const q = "SELECT * FROM reviews ORDER BY created_at DESC";
     db.query(q, (err, data) => {
-        if (err) return res.json(err);
+        if (err) return res.status(500).json({ error: err.message });
         return res.json(data);
     });
 });
@@ -30,13 +34,13 @@ app.post('/reviews', (req, res) => {
         req.body.review_text,
         req.body.rating
     ];
-    
-    db.query(q, [values], (err, data) => {
-        if (err) return res.json(err);
-        return res.json("Review has been created successfully");
+
+    db.query(q, [values], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        return res.json({ message: "Review created successfully" });
     });
 });
 
 app.listen(8800, () => {
-    console.log("Connected to backend!");
+    console.log("🚀 Backend is running on port 8800");
 });
